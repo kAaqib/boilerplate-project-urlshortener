@@ -4,8 +4,7 @@ const cors = require('cors');
 const app = express();
 const dns = require('dns');
 const bodyParser = require('body-parser');
-const { doesNotMatch } = require('assert');
-const { redirect } = require('express/lib/response');
+const URL = require('url').URL;
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
@@ -24,15 +23,18 @@ app.get('/api/hello', function(req, res) {
 
 app.post('/api/shorturl', function(req, res) {
   const url = req.body.url;
-  // dns.lookup(url, function(err, data) {
-  //   console.log(data);
+  try {
+    const hn = new URL(url);
+    
+    short_url = 1;
+    res.json({original_url: url, short_url: short_url});
+  } catch(err) {
+    res.json({error: 'invalid url'});
+  }
+    // app.get('/api/shorturl/1', function(req, res) {
+  //   console.log(redirect);
+  //   res.redirect(302, url);
   // });
-  short_url = 1;
-  res.json({original_url: url, short_url: short_url});
-  app.get('/api/shorturl/1', function(req, res) {
-    console.log(redirect);
-    res.redirect(url);
-  });
 });
 
 
