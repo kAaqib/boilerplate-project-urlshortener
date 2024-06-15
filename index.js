@@ -2,12 +2,18 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const dns = require('dns');
 const bodyParser = require('body-parser');
-const URL = require('url').URL;
+const isURL = require('is-url');
+const mon = require('mongoose');
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
+mon.connect("mongodb+srv://fccdb:fccdb@cluster0.teunbos.mongodb.net/fccdb?retryWrites=true&w=majority&appName=Cluster0", { useNewUrlParser: true, useUnifiedTopology: true });
+const urlS = mon.Schema ({
+  og_url: String,
+  s_url: String
+});
+const urlM = mon.model("urlM", urlS);
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/public', express.static(`${process.cwd()}/public`));
@@ -23,20 +29,34 @@ app.get('/api/hello', function(req, res) {
 
 app.post('/api/shorturl', function(req, res) {
   const url = req.body.url;
-  try {
-    const hn = new URL(url);
-    
-    short_url = 1;
+  if (isURL(url)) {
+    short_url = Math.floor(Math.random() * 100000).toString();
+    var currurl = new urlM ({
+      og_url: url,
+      s_url: short_url
+    });
+    currurl.save();
     res.json({original_url: url, short_url: short_url});
-  } catch(err) {
+  } else {
     res.json({error: 'invalid url'});
   }
-    // app.get('/api/shorturl/1', function(req, res) {
-  //   console.log(redirect);
-  //   res.redirect(302, url);
-  // });
 });
 
+app.get('/api/shorturl/:surl?', function(req, res) {
+  const surl = req.params.surl;
+  console.log(surl);
+  urlM.findOne({s_url: surl})
+  .then(function(data) {
+    const ogurl = data.og_url;
+    if (ogurl === null)
+      console.log("Does not exist");
+    console.log(ogurl);
+    res.redirect(ogurl);
+  })
+  .catch(function(err) {
+    console.log(err);
+  });
+});
 
 app.listen(port, function() {
   console.log(`Listening on port ${port}`);
